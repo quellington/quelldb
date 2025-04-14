@@ -1,3 +1,4 @@
+// Database package for a key-value store
 package db
 
 import (
