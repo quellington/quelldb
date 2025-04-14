@@ -4,6 +4,8 @@ package db
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/thirashapw/quelldb/constants"
 )
 
 type DB struct {
@@ -14,7 +16,7 @@ type DB struct {
 
 func Open(path string) (*DB, error) {
 	os.MkdirAll(path, 0755)
-	wal, err := NewWAL(filepath.Join(path, "wal.log"))
+	wal, err := NewWAL(filepath.Join(path, constants.LOG_FILE))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func (db *DB) Delete(key string) error {
 func (db *DB) Flush() error {
 	// write SSTable
 	data := db.memStorage.All()
-	path := filepath.Join(db.basePath, "sstable.data")
+	path := filepath.Join(db.basePath, constants.SS_TABLE_FILE)
 	return WriteSSStorage(path, data)
 }
 
