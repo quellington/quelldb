@@ -1,4 +1,4 @@
-// sorted string table 
+// sorted string storage 
 package db
 
 import (
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func WriteSSTable(path string, data map[string]string) error {
+func WriteSSStorage(path string, data map[string]string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func WriteSSTable(path string, data map[string]string) error {
 	return nil
 }
 
-func ReadSSTable(path string) (map[string]string, error) {
+func ReadSSStorage(path string) (map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
