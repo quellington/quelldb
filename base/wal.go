@@ -1,5 +1,5 @@
 // write ahead log (WAL) implementation
-package db
+package base
 
 import (
 	"fmt"

@@ -1,6 +1,5 @@
 // Memory storage implementation for key-value pairs
-
-package db
+package base
 
 import "sync"
 

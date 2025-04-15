@@ -1,5 +1,5 @@
 // sorted string storage
-package db
+package base
 
 import (
 	"encoding/binary"

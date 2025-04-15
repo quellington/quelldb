@@ -1,6 +1,6 @@
 // Database package for a key-value store
 // v1.0.1
-package db
+package quelldb
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/thirashapw/quelldb/base"
 	"github.com/thirashapw/quelldb/constants"
 )
 
@@ -17,8 +18,8 @@ type Options struct {
 }
 
 type DB struct {
-	memStorage *MemStorage
-	wal        *WAL
+	memStorage *base.MemStorage
+	wal        *base.WAL
 	basePath   string
 	key        []byte
 }
@@ -26,13 +27,13 @@ type DB struct {
 func Open(path string, opts *Options) (*DB, error) {
 	os.MkdirAll(path, 0755)
 
-	wal, err := NewWAL(filepath.Join(path, constants.LOG_FILE))
+	wal, err := base.NewWAL(filepath.Join(path, constants.LOG_FILE))
 	if err != nil {
 		return nil, err
 	}
 
 	db := &DB{
-		memStorage: NewMemStorage(),
+		memStorage: base.NewMemStorage(),
 		basePath:   path,
 		wal:        wal,
 	}
@@ -64,7 +65,7 @@ func (db *DB) Get(key string) (string, bool) {
 		f := files[i]
 		if strings.HasPrefix(f.Name(), constants.SSS_PREFIX) {
 			path := filepath.Join(db.basePath, f.Name())
-			data, _ := ReadSSStorage(path, db.key)
+			data, _ := base.ReadSSStorage(path, db.key)
 			if val, ok := data[key]; ok {
 				return val, true
 			}
@@ -94,7 +95,7 @@ func (db *DB) Flush() error {
 
 	filename := fmt.Sprintf("%s%05d%s", constants.SSS_PREFIX, id, constants.SSS_SUFFIX)
 	path := filepath.Join(db.basePath, filename)
-	return WriteSSStorage(path, db.memStorage.All(), db.key)
+	return base.WriteSSStorage(path, db.memStorage.All(), db.key)
 }
 
 func (db *DB) Close() error {
