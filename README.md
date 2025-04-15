@@ -23,6 +23,13 @@ Built on a Log-Structured Merge Tree (LSM Tree) architecture, QuellDB provides:
 
 ---
 
+## Limitations
+
+- Indexing and secondary indexes are not supported. All data access is key-based.
+- The library is designed for embedded use only. There is no built-in client-server model or remote access.
+- WAL recovery and data replay on startup are planned but not implemented in this version.
+
+
 ## Installation
 
 ```bash
