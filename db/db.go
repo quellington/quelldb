@@ -24,7 +24,9 @@ type DB struct {
 }
 
 func Open(path string, opts *Options) (*DB, error) {
-	err := os.MkdirAll(path, 0755)
+	os.MkdirAll(path, 0755)
+
+	wal, err := NewWAL(filepath.Join(path, constants.LOG_FILE))
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +34,7 @@ func Open(path string, opts *Options) (*DB, error) {
 	db := &DB{
 		memStorage: NewMemStorage(),
 		basePath:   path,
-		key:        nil,
+		wal:        wal,
 	}
 
 	if opts != nil && len(opts.EncryptionKey) > 0 {
@@ -51,24 +53,25 @@ func (db *DB) Put(key, value string) error {
 }
 
 func (db *DB) Get(key string) (string, bool) {
-	// check MemTable first
+	// check MemS first
 	if val, ok := db.memStorage.Get(key); ok {
 		return val, true
 	}
 
-	// check from newest SSTable to oldest
+	// check from newest SSS to oldest
 	files, _ := os.ReadDir(db.basePath)
 	for i := len(files) - 1; i >= 0; i-- {
 		f := files[i]
 		if strings.HasPrefix(f.Name(), constants.SSS_PREFIX) {
 			path := filepath.Join(db.basePath, f.Name())
-			data, _ := ReadSSStorage(path)
+			data, _ := ReadSSStorage(path, db.key)
 			if val, ok := data[key]; ok {
 				return val, true
 			}
 		}
 	}
 	return "", false
+
 }
 
 func (db *DB) Delete(key string) error {
@@ -91,7 +94,7 @@ func (db *DB) Flush() error {
 
 	filename := fmt.Sprintf("%s%05d%s", constants.SSS_PREFIX, id, constants.SSS_SUFFIX)
 	path := filepath.Join(db.basePath, filename)
-	return WriteSSStorage(path, db.memStorage.All())
+	return WriteSSStorage(path, db.memStorage.All(), db.key)
 }
 
 func (db *DB) Close() error {

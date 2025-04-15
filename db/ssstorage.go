@@ -17,24 +17,24 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	defer file.Close()
 
 	for k, v := range data {
-		keyBytes := snappy.Encode(nil, []byte(k))
-		valBytes := snappy.Encode(nil, []byte(v))
+		kb := snappy.Encode(nil, []byte(k))
+		vb := snappy.Encode(nil, []byte(v))
 
 		if key != nil {
-			keyBytes, err = utils.Encrypt(keyBytes, key)
+			kb, err = utils.Encrypt(kb, key)
 			if err != nil {
 				return err
 			}
-			valBytes, err = utils.Encrypt(valBytes, key)
+			vb, err = utils.Encrypt(vb, key)
 			if err != nil {
 				return err
 			}
 		}
 
-		binary.Write(file, binary.LittleEndian, int32(len(keyBytes)))
-		file.Write(keyBytes)
-		binary.Write(file, binary.LittleEndian, int32(len(valBytes)))
-		file.Write(valBytes)
+		binary.Write(file, binary.LittleEndian, int32(len(kb)))
+		file.Write(kb)
+		binary.Write(file, binary.LittleEndian, int32(len(vb)))
+		file.Write(vb)
 	}
 	return nil
 }
@@ -48,42 +48,41 @@ func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 
 	result := make(map[string]string)
 	for {
-		var keyLen int32
-		err := binary.Read(file, binary.LittleEndian, &keyLen)
+		var kLen int32
+		err := binary.Read(file, binary.LittleEndian, &kLen)
 		if err != nil {
 			break
 		}
-
-		keyBytes := make([]byte, keyLen)
-		_, err = file.Read(keyBytes)
+		kb := make([]byte, kLen)
+		_, err = file.Read(kb)
 		if err != nil {
 			return nil, err
 		}
 		if key != nil {
-			keyBytes, err = utils.Decrypt(keyBytes, key)
+			kb, err = utils.Decrypt(kb, key)
 			if err != nil {
 				return nil, err
 			}
 		}
-		keyDecoded, err := snappy.Decode(nil, keyBytes)
+		keyDecoded, err := snappy.Decode(nil, kb)
 		if err != nil {
 			return nil, err
 		}
 
-		var valLen int32
-		binary.Read(file, binary.LittleEndian, &valLen)
-		valBytes := make([]byte, valLen)
-		_, err = file.Read(valBytes)
+		var vLen int32
+		binary.Read(file, binary.LittleEndian, &vLen)
+		vb := make([]byte, vLen)
+		_, err = file.Read(vb)
 		if err != nil {
 			return nil, err
 		}
 		if key != nil {
-			valBytes, err = utils.Decrypt(valBytes, key)
+			vb, err = utils.Decrypt(vb, key)
 			if err != nil {
 				return nil, err
 			}
 		}
-		valDecoded, err := snappy.Decode(nil, valBytes)
+		valDecoded, err := snappy.Decode(nil, vb)
 		if err != nil {
 			return nil, err
 		}
