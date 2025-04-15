@@ -108,4 +108,4 @@ MIT License © 2025 The QuellDB Authors
 
 
 ## Contributors
-@thirashapw – Creator and Maintainer
+- [@thirashapw](https://github.com/thirashapw) – Creator and Maintainer
