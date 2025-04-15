@@ -9,9 +9,7 @@ import (
 	"github.com/thirashapw/quelldb/utils"
 )
 
-const xorKey byte = 0xAB
-
-func WriteSSStorage(path string, data map[string]string) error {
+func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -19,22 +17,29 @@ func WriteSSStorage(path string, data map[string]string) error {
 	defer file.Close()
 
 	for k, v := range data {
-		kb := snappy.Encode(nil, []byte(k))
-		vb := snappy.Encode(nil, []byte(v))
+		keyBytes := snappy.Encode(nil, []byte(k))
+		valBytes := snappy.Encode(nil, []byte(v))
 
-		kb = utils.XorMask(kb, xorKey)
-		vb = utils.XorMask(vb, xorKey)
+		if key != nil {
+			keyBytes, err = utils.Encrypt(keyBytes, key)
+			if err != nil {
+				return err
+			}
+			valBytes, err = utils.Encrypt(valBytes, key)
+			if err != nil {
+				return err
+			}
+		}
 
-		binary.Write(file, binary.LittleEndian, int32(len(kb)))
-		file.Write(kb)
-
-		binary.Write(file, binary.LittleEndian, int32(len(vb)))
-		file.Write(vb)
+		binary.Write(file, binary.LittleEndian, int32(len(keyBytes)))
+		file.Write(keyBytes)
+		binary.Write(file, binary.LittleEndian, int32(len(valBytes)))
+		file.Write(valBytes)
 	}
 	return nil
 }
 
-func ReadSSStorage(path string) (map[string]string, error) {
+func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -43,30 +48,45 @@ func ReadSSStorage(path string) (map[string]string, error) {
 
 	result := make(map[string]string)
 	for {
-		var kLen int32
-		err := binary.Read(file, binary.LittleEndian, &kLen)
+		var keyLen int32
+		err := binary.Read(file, binary.LittleEndian, &keyLen)
 		if err != nil {
 			break
 		}
 
-		kb := make([]byte, kLen)
-		file.Read(kb)
-		kb = utils.XorMask(kb, xorKey)
-		keyDecoded, err := snappy.Decode(nil, kb)
+		keyBytes := make([]byte, keyLen)
+		_, err = file.Read(keyBytes)
+		if err != nil {
+			return nil, err
+		}
+		if key != nil {
+			keyBytes, err = utils.Decrypt(keyBytes, key)
+			if err != nil {
+				return nil, err
+			}
+		}
+		keyDecoded, err := snappy.Decode(nil, keyBytes)
 		if err != nil {
 			return nil, err
 		}
 
-		var vLen int32
-		binary.Read(file, binary.LittleEndian, &vLen)
-		vb := make([]byte, vLen)
-		file.Read(vb)
-		vb = utils.XorMask(vb, xorKey)
-		valDecoded, err := snappy.Decode(nil, vb)
+		var valLen int32
+		binary.Read(file, binary.LittleEndian, &valLen)
+		valBytes := make([]byte, valLen)
+		_, err = file.Read(valBytes)
 		if err != nil {
 			return nil, err
 		}
-
+		if key != nil {
+			valBytes, err = utils.Decrypt(valBytes, key)
+			if err != nil {
+				return nil, err
+			}
+		}
+		valDecoded, err := snappy.Decode(nil, valBytes)
+		if err != nil {
+			return nil, err
+		}
 		result[string(keyDecoded)] = string(valDecoded)
 	}
 	return result, nil

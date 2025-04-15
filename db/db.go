@@ -1,4 +1,5 @@
 // Database package for a key-value store
+// v1.0.1
 package db
 
 import (
@@ -11,23 +12,36 @@ import (
 	"github.com/thirashapw/quelldb/constants"
 )
 
+type Options struct {
+	EncryptionKey []byte
+}
+
 type DB struct {
 	memStorage *MemStorage
 	wal        *WAL
 	basePath   string
+	key        []byte
 }
 
-func Open(path string) (*DB, error) {
-	os.MkdirAll(path, 0755)
-	wal, err := NewWAL(filepath.Join(path, constants.LOG_FILE))
+func Open(path string, opts *Options) (*DB, error) {
+	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return nil, err
 	}
+
 	db := &DB{
 		memStorage: NewMemStorage(),
-		wal:        wal,
 		basePath:   path,
+		key:        nil,
 	}
+
+	if opts != nil && len(opts.EncryptionKey) > 0 {
+		if len(opts.EncryptionKey) != 32 {
+			return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
+		}
+		db.key = opts.EncryptionKey
+	}
+
 	return db, nil
 }
 
