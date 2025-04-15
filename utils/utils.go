@@ -12,7 +12,9 @@ import (
 	"io"
 )
 
-
+// Encrypt encrypts the given data using AES-GCM with the provided key.
+// The key must be 16, 24, or 32 bytes long for AES-128, AES-192, or AES-256 respectively.
+// It returns the ciphertext, which includes the nonce prepended to the encrypted data.
 func Encrypt(data, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -33,6 +35,11 @@ func Encrypt(data, key []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
+
+// Decrypt decrypts the given ciphertext using AES-GCM with the provided key.
+// The key must be 16, 24, or 32 bytes long for AES-128, AES-192, or AES-256 respectively.
+// It expects the ciphertext to include the nonce prepended to the encrypted data.
+// It returns the decrypted data.
 func Decrypt(ciphertext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
