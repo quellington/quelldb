@@ -1,5 +1,9 @@
-// Database package for a key-value store
-// v1.0.1
+// Copyright 2025 The QuellDB Authors. All rights reserved.
+// Use of this source code is governed by an MIT-style license that can be found in
+// the LICENSE file.
+
+// v1.1.2
+
 package quelldb
 
 import (
