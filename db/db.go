@@ -33,7 +33,7 @@ func Open(path string) (*DB, error) {
 
 func (db *DB) Put(key, value string) error {
 	db.memStorage.Put(key, value)
-	return db.wal.Write("PUT", key, value)
+	return db.wal.Write(constants.PUT, key, value)
 }
 
 func (db *DB) Get(key string) (string, bool) {
@@ -59,7 +59,7 @@ func (db *DB) Get(key string) (string, bool) {
 
 func (db *DB) Delete(key string) error {
 	db.memStorage.Delete(key)
-	return db.wal.Write("DEL", key, "")
+	return db.wal.Write(constants.DELETE, key, "")
 }
 
 func (db *DB) Flush() error {
