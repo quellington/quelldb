@@ -36,21 +36,21 @@ func LoadUser(db *db.DB, id string) (*User, error) {
 }
 
 func main() {
-	store, err := db.Open("data")
+	store, err := db.Open("data", nil)
 	if err != nil {
 		panic(err)
 	}
 	defer store.Close()
 
-	// store.Put("foo", "bar")
-	// store.Put("hello", "world")
-	// store.Put("hedsadllo", "world")
-	// store.Put("heldsadsalo", "world")
-	// store.Put("hedsadllo", "world")
-	// store.Put("heldsdsalo", "world")
-	// store.Put("heldsadlo", "wodsdrld")
-	// store.Put("heldsadlo", "worldsdd")
-	// store.Put("heldsadlo", "world")
+	store.Put("foo", "bar")
+	store.Put("hello", "world")
+	store.Put("hedsadllo", "world")
+	store.Put("heldsadsalo", "world")
+	store.Put("hedsadllo", "world")
+	store.Put("heldsdsalo", "world")
+	store.Put("heldsadlo", "wodsdrld")
+	store.Put("heldsadlo", "worldsdd")
+	store.Put("heldsadlo", "world")
 
 	val, _ := store.Get("heldsadlo")
 	fmt.Println("Value of foo:", val)
