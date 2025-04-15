@@ -71,7 +71,7 @@ import (
 func main() {
     key := []byte("thisis32byteslongthisis32byteslo") // 32 bytes
 
-    store, err := quelldb.Open("securedata", &db.Options{
+    store, err := quelldb.Open("securedata", &quelldb.Options{
         EncryptionKey: key,
     })
     if err != nil {
@@ -99,7 +99,7 @@ If you provide a 32-byte EncryptionKey, QuellDB will:
 
 | Function       | Description                                      |
 |----------------|--------------------------------------------------|
-| `db.Open()`    | Initializes a database at given path             |
+| `quelldb.Open()`    | Initializes a database at given path             |
 | `Put(key, val)`| Writes data into memory and WAL                  |
 | `Get(key)`     | Retrieves value from memory or SSStorages        |
 | `Flush()`      | Persists current MemStorage to a new SSStorage   |
