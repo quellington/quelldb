@@ -56,8 +56,8 @@ func main() {
 	store.Put("heldsadlo", "worldsdd")
 	store.Put("heldsadlo", "world")
 
-	val, _ := store.Get("heldsadlo")
-	fmt.Println("Value of foo:", val)
+	// val, _ := store.Get("heldsadlo")
+	// fmt.Println("Value of foo:", val)
 
 	// u := User{
 	// 	ID:       "123",
