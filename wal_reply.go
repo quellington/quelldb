@@ -8,6 +8,8 @@ import (
 	"bufio"
 	"os"
 	"strings"
+
+	"github.com/thirashapw/quelldb/constants"
 )
 
 // Put stores a key-value pair in the database.
@@ -35,10 +37,10 @@ func (db *DB) replayWAL(path string) error {
 		}
 		op, key, val := parts[0], parts[1], parts[2]
 		switch op {
-		case "PUT":
+		case constants.GET:
 			db.memStorage.Put(key, val)
-		case "DEL":
-			// TODO
+		case constants.DELETE:
+			db.memStorage.Delete(key)
 		}
 	}
 	return scanner.Err()
