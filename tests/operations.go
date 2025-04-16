@@ -40,7 +40,9 @@ func LoadUser(db *quelldb.DB, id string) (*User, error) {
 }
 
 func main() {
-	store, err := quelldb.Open("data", nil)
+	store, err := quelldb.Open("data", &quelldb.Options{
+		CompactLimit: 5,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +68,8 @@ func main() {
 		Age:      50,
 	}
 	SaveUser(store, u)
-
+	store.Flush()
+	store.Compact()
 	loadedUser, _ := LoadUser(store, "123")
 	fmt.Println("Username:", loadedUser.Username)
 

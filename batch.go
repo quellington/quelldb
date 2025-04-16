@@ -17,13 +17,15 @@ import (
 
 type Options struct {
 	EncryptionKey []byte
+	CompactLimit  uint
 }
 
 type DB struct {
-	memStorage *base.MemStorage
-	wal        *base.WAL
-	basePath   string
-	key        []byte
+	memStorage   *base.MemStorage
+	wal          *base.WAL
+	basePath     string
+	key          []byte
+	compactLimit uint
 }
 
 // Open initializes a new database at the specified path.
@@ -36,7 +38,8 @@ type DB struct {
 func Open(path string, opts *Options) (*DB, error) {
 	os.MkdirAll(path, 0755)
 
-	wal, err := base.NewWAL(filepath.Join(path, constants.LOG_FILE))
+	walLogPath := filepath.Join(path, constants.LOG_FILE)
+	wal, err := base.NewWAL(walLogPath)
 	if err != nil {
 		return nil, err
 	}
@@ -47,16 +50,30 @@ func Open(path string, opts *Options) (*DB, error) {
 		wal:        wal,
 	}
 
-	if opts != nil && len(opts.EncryptionKey) > 0 {
-		if len(opts.EncryptionKey) != 32 {
-			return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
+	if opts != nil {
+		if len(opts.EncryptionKey) > 0 {
+			if len(opts.EncryptionKey) != 32 {
+				return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
+			}
+			db.key = opts.EncryptionKey
 		}
-		db.key = opts.EncryptionKey
+
+		if opts.CompactLimit > 0 {
+			db.compactLimit = opts.CompactLimit
+		}
+	}
+
+	if db.compactLimit == 0 {
+		db.compactLimit = constants.SSS_COMPACT_DEFAULT_LIMIT
+	}
+
+	// Check if the WAL file exists
+	if err := db.replayWAL(walLogPath); err != nil {
+		return nil, fmt.Errorf("WAL replay failed: %w", err)
 	}
 
 	return db, nil
 }
-
 
 // Put stores a key-value pair in the database.
 // It first stores the pair in memory and then writes it to the WAL.
@@ -67,7 +84,6 @@ func (db *DB) Put(key, value string) error {
 	db.memStorage.Put(key, value)
 	return db.wal.Write(constants.PUT, key, value)
 }
-
 
 // Get retrieves the value associated with the given key.
 // It first checks the in-memory storage and then searches through the SSS files in reverse order.
@@ -109,7 +125,6 @@ func (db *DB) Delete(key string) error {
 	db.memStorage.Delete(key)
 	return db.wal.Write(constants.DELETE, key, "")
 }
-
 
 // Flush writes the in-memory data to a new SSS file.
 // It generates a new filename based on the highest existing SSS file number.
