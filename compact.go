@@ -43,7 +43,7 @@ func (db *DB) Compact() error {
 	}
 
 	// if there are less than 2 SSStorages, no need to merge
-	if len(sstPaths) < constants.SSS_COMPACT_DEFAULT_LIMIT {
+	if uint(len(sstPaths)) < db.compactLimit {
 		return nil
 	}
 
@@ -61,8 +61,6 @@ func (db *DB) Compact() error {
 
 	return nil
 }
-
-
 
 // nextSSSID generates the next SSStorage ID based on existing files in the base path.
 func nextSSSID(basePath string) (int, error) {

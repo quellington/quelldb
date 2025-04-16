@@ -5,11 +5,11 @@
 package constants
 
 const (
-	LOG_FILE            = "00000.log"
-	SSS_MERGE_FILE_NAME = "sss-merged"
-	SSS_PREFIX          = "sss-"
-	SSS_SUFFIX          = ".qldb"
-	SSS_COMPACT_DEFAULT_LIMIT   = 10
+	LOG_FILE                  = "00000.log"
+	SSS_MERGE_FILE_NAME       = "sss-merged"
+	SSS_PREFIX                = "sss-"
+	SSS_SUFFIX                = ".qldb"
+	SSS_COMPACT_DEFAULT_LIMIT = 10
 
 	// KEY
 	PUT    = "PUT"

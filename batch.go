@@ -17,13 +17,15 @@ import (
 
 type Options struct {
 	EncryptionKey []byte
+	CompactLimit  uint
 }
 
 type DB struct {
-	memStorage *base.MemStorage
-	wal        *base.WAL
-	basePath   string
-	key        []byte
+	memStorage   *base.MemStorage
+	wal          *base.WAL
+	basePath     string
+	key          []byte
+	compactLimit uint
 }
 
 // Open initializes a new database at the specified path.
@@ -48,11 +50,21 @@ func Open(path string, opts *Options) (*DB, error) {
 		wal:        wal,
 	}
 
-	if opts != nil && len(opts.EncryptionKey) > 0 {
-		if len(opts.EncryptionKey) != 32 {
-			return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
+	if opts != nil {
+		if len(opts.EncryptionKey) > 0 {
+			if len(opts.EncryptionKey) != 32 {
+				return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
+			}
+			db.key = opts.EncryptionKey
 		}
-		db.key = opts.EncryptionKey
+
+		if opts.CompactLimit > 0 {
+			db.compactLimit = opts.CompactLimit
+		}
+	}
+
+	if db.compactLimit == 0 {
+		db.compactLimit = constants.SSS_COMPACT_DEFAULT_LIMIT
 	}
 
 	// Check if the WAL file exists
