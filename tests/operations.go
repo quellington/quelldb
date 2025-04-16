@@ -59,14 +59,15 @@ func main() {
 	val, _ := store.Get("heldsadlo")
 	fmt.Println("Value of foo:", val)
 
-	u := User{
-		ID:       "123",
-		Username: "thirasha",
-		Email:    "t@crypto.io",
-		Age:      50,
-	}
-	SaveUser(store, u)
-	store.Flush()
+	// u := User{
+	// 	ID:       "123",
+	// 	Username: "thirasha",
+	// 	Email:    "t@crypto.io",
+	// 	Age:      50,
+	// }
+	// SaveUser(store, u)
+	// store.Flush()
+	// store.Compact()
 	loadedUser, _ := LoadUser(store, "123")
 	fmt.Println("Username:", loadedUser.Username)
 

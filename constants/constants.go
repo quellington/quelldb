@@ -5,13 +5,15 @@
 package constants
 
 const (
-	LOG_FILE      = "00000.log"
-	SSS_PREFIX     = "sss-"
-	SSS_SUFFIX     = ".qldb"
+	LOG_FILE            = "00000.log"
+	SSS_MERGE_FILE_NAME = "sss-merged"
+	SSS_PREFIX          = "sss-"
+	SSS_SUFFIX          = ".qldb"
+	SSS_COMPACT_LIMIT   = 3
 
 	// KEY
-	PUT	= "PUT"
+	PUT    = "PUT"
 	DELETE = "DEL"
-	GET	= "GET"
-	ALL	= "ALL"
+	GET    = "GET"
+	ALL    = "ALL"
 )
