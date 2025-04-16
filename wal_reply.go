@@ -24,6 +24,8 @@ func (db *DB) replayWAL(path string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, "|", 3)
+
+		// skip empty lines or lines that don't have exact parts
 		if len(parts) != 3 {
 			continue
 		}

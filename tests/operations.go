@@ -66,7 +66,7 @@ func main() {
 		Age:      50,
 	}
 	SaveUser(store, u)
-
+	store.Flush()
 	loadedUser, _ := LoadUser(store, "123")
 	fmt.Println("Username:", loadedUser.Username)
 
