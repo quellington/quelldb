@@ -1,0 +1,39 @@
+package quelldb
+
+import (
+	"bufio"
+	"os"
+	"strings"
+)
+
+// Put stores a key-value pair in the database.
+// It first stores the pair in memory and then writes it to the WAL.
+// The function takes a key and a value as parameters.
+func (db *DB) replayWAL(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, "|", 3)
+		if len(parts) != 3 {
+			continue
+		}
+		op, key, val := parts[0], parts[1], parts[2]
+		switch op {
+		case "PUT":
+			db.memStorage.Put(key, val)
+		case "DEL":
+			// TODO
+		}
+	}
+	return scanner.Err()
+}
