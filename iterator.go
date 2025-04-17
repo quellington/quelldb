@@ -19,7 +19,7 @@ type Iterator struct {
 // The iterator is not thread-safe and should be used by a single goroutine at a time.
 // The caller is responsible for closing the iterator when done.
 // The iterator does not require any additional resources to be closed.
-func (db *DB) NewIterator() *Iterator {
+func (db *DB) Iterator() *Iterator {
 	all := db.memStorage.All()
 	keys := make([]string, 0, len(all))
 	for k := range all {
@@ -38,7 +38,7 @@ func (db *DB) NewIterator() *Iterator {
 // NewPrefixIterator creates a new iterator for the database with a specific prefix.
 // It retrieves all keys from the in-memory storage that start with the given prefix,
 // sorts them, and initializes the iterator with the sorted keys and their corresponding values.
-func (db *DB) NewPrefixIterator(prefix string) *Iterator {
+func (db *DB) PrefixIterator(prefix string) *Iterator {
 	all := db.memStorage.All()
 	filtered := make(map[string]string)
 	for k, v := range all {

@@ -111,13 +111,13 @@ func main() {
 
 	// fmt.Println("Username2:", user.Username)
 
-	// it := store.NewIterator()
+	// it := store.Iterator()
 
 	// for it.Next() {
 	// 	fmt.Println(it.Key(), it.Value())
 	// }
 
-	it := store.NewPrefixIterator("user:")
+	it := store.PrefixIterator("user:")
 	for it.Next() {
 		fmt.Println(it.Key(), it.Value())
 	}
