@@ -49,9 +49,16 @@ func (db *DB) Compact() error {
 
 	// write merged SSStorage
 	id, _ := utils.NextSSSID(db.basePath)
-	newPath := filepath.Join(db.basePath, fmt.Sprintf(constants.SSS_PREFIX+"%05d"+constants.SSS_SUFFIX, id))
+	newSSSFile := fmt.Sprintf(constants.SSS_PREFIX+"%05d"+constants.SSS_SUFFIX, id)
+	newPath := filepath.Join(db.basePath, newSSSFile)
 	if err := base.WriteSSStorage(newPath, merged, db.key); err != nil {
 		return err
+	}
+
+	db.manifestSSSs = []string{newSSSFile}
+
+	if mErr := SaveManifest(db.basePath, db.manifestSSSs, db.key); mErr != nil {
+		return mErr
 	}
 
 	// remove old SSStorage
