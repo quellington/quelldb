@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -111,18 +112,29 @@ func main() {
 
 	// fmt.Println("Username2:", user.Username)
 
-	// it := store.NewIterator()
+	// it := store.Iterator()
 
 	// for it.Next() {
 	// 	fmt.Println(it.Key(), it.Value())
 	// }
 
-	it := store.NewPrefixIterator("user:")
+	it := store.PrefixIterator("user:")
 	for it.Next() {
 		fmt.Println(it.Key(), it.Value())
 	}
 
 	// ----
+
+	// -- ttl --
+
+	store.PutTTL("test:token", "abc123", 5*time.Second)
+
+	time.Sleep(4 * time.Second)
+
+	val, ok = store.Get("test:token")
+	fmt.Println("Value of test:token:", val, ok)
+
+	// -- ttl --
 
 	// AES
 

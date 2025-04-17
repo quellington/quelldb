@@ -2,26 +2,31 @@
 // Use of this source code is governed by an MIT-style license that can be found in
 // the LICENSE file.
 
-
 // Memory storage implementation for key-value pairs
 package base
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type MemStorage struct {
 	data map[string]string
 	mu   sync.RWMutex
+	ttl  map[string]time.Time
 }
 
 // NewMemStorage creates a new instance of MemStorage.
 // It initializes the internal map to store key-value pairs.
 // The map is protected by a read-write mutex to allow concurrent access.
 func NewMemStorage() *MemStorage {
-	return &MemStorage{
+	ms := &MemStorage{
 		data: make(map[string]string),
+		ttl:  make(map[string]time.Time),
 	}
+	go ms.ttlEvictionLoop()
+	return ms
 }
-
 
 // Get retrieves the value associated with the given key.
 // It returns the value and a boolean indicating whether the key exists in the storage.
@@ -30,9 +35,21 @@ func (m *MemStorage) Get(key string) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	val, ok := m.data[key]
-	return val, ok
-}
 
+	if !ok {
+		return "", false
+	}
+
+	if exp, ok := m.ttl[key]; ok {
+		if time.Now().After(exp) {
+
+			// key expired
+			return "", false
+		}
+	}
+
+	return val, true
+}
 
 // Put stores the key-value pair in the storage.
 // If the key already exists, it updates the value.
@@ -43,6 +60,13 @@ func (m *MemStorage) Put(key, value string) {
 	m.data[key] = value
 }
 
+// PutTTL stores the key-value pair with a time-to-live (TTL).
+func (m *MemStorage) PutWithTTL(key, value string, duration time.Duration) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = value
+	m.ttl[key] = time.Now().Add(duration)
+}
 
 // Delete removes the key-value pair associated with the given key.
 // The method uses a write lock to ensure exclusive access during the operation.
@@ -67,4 +91,25 @@ func (m *MemStorage) All() map[string]string {
 		cloned[k] = v
 	}
 	return cloned
+}
+
+// SetTTL sets a time-to-live (TTL) for the given key.
+// The key will be automatically deleted after the specified duration.
+// The method uses a write lock to ensure exclusive access during the operation.
+func (m *MemStorage) ttlEvictionLoop() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		now := time.Now()
+
+		m.mu.Lock()
+		for k, exp := range m.ttl {
+			if now.After(exp) {
+				delete(m.data, k)
+				delete(m.ttl, k)
+			}
+		}
+		m.mu.Unlock()
+	}
 }
