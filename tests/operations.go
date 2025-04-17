@@ -42,7 +42,7 @@ func LoadUser(db *quelldb.DB, id string) (*User, error) {
 
 func main() {
 	store, err := quelldb.Open("data", &quelldb.Options{
-		CompactLimit:  5,
+		CompactLimit:  20,
 		BoomHashCount: 4,
 	})
 	if err != nil {

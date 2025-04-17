@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/golang/snappy"
 	"github.com/thirashapw/quelldb/constants"
@@ -82,7 +83,20 @@ func SaveManifest(basePath string, ssts []string, key []byte) error {
 
 	// update CURRENT pointer
 	currentPath := filepath.Join(basePath, constants.CURRENT_MANIFEST_FILE)
-	return os.WriteFile(currentPath, []byte(filename), 0644)
+	if err := os.WriteFile(currentPath, []byte(filename), 0644); err != nil {
+		return err
+	}
+
+	// manifest cleanup
+	files, _ := os.ReadDir(basePath)
+	for _, f := range files {
+		name := f.Name()
+		if strings.HasPrefix(name, constants.MANIFEST_FILE_PREFIX+"-") && name != filename {
+			os.Remove(filepath.Join(basePath, name))
+		}
+	}
+
+	return nil
 }
 
 // LoadManifest reads CURRENT, then loads the correct numbered manifest
