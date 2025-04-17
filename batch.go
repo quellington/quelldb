@@ -18,14 +18,18 @@ import (
 type Options struct {
 	EncryptionKey []byte
 	CompactLimit  uint
+	BoomBitSize   uint
+	BoomHashCount uint
 }
 
 type DB struct {
-	memStorage   *base.MemStorage
-	wal          *base.WAL
-	basePath     string
-	key          []byte
-	compactLimit uint
+	memStorage    *base.MemStorage
+	wal           *base.WAL
+	basePath      string
+	key           []byte
+	compactLimit  uint
+	boomBitSize   uint
+	boomHashCount uint
 }
 
 // Open initializes a new database at the specified path.
@@ -45,9 +49,12 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	db := &DB{
-		memStorage: base.NewMemStorage(),
-		basePath:   path,
-		wal:        wal,
+		memStorage:    base.NewMemStorage(),
+		basePath:      path,
+		wal:           wal,
+		compactLimit:  constants.SSS_COMPACT_DEFAULT_LIMIT,
+		boomBitSize:   constants.BOOM_BIT_SIZE,
+		boomHashCount: constants.BOOM_HASH_COUNT,
 	}
 
 	if opts != nil {
@@ -61,10 +68,14 @@ func Open(path string, opts *Options) (*DB, error) {
 		if opts.CompactLimit > 0 {
 			db.compactLimit = opts.CompactLimit
 		}
-	}
 
-	if db.compactLimit == 0 {
-		db.compactLimit = constants.SSS_COMPACT_DEFAULT_LIMIT
+		if opts.BoomBitSize > 0 {
+			db.boomBitSize = opts.BoomBitSize
+		}
+
+		if opts.BoomHashCount > 0 {
+			db.boomHashCount = opts.BoomHashCount
+		}
 	}
 
 	// Check if the WAL file exists
@@ -83,6 +94,25 @@ func Open(path string, opts *Options) (*DB, error) {
 func (db *DB) Put(key, value string) error {
 	db.memStorage.Put(key, value)
 	return db.wal.Write(constants.PUT, key, value)
+}
+
+
+// PutBatch stores multiple key-value pairs in the database.
+// It first stores the pairs in memory and then writes them to the WAL.
+// If the key already exists, it will be updated with the new value.
+func (db *DB) PutBatch(kvs map[string]string) error {
+	if len(kvs) == 0 {
+		return nil
+	}
+
+	var wls []string
+
+	for key, value := range kvs {
+		db.memStorage.Put(key, value)
+		wls = append(wls, fmt.Sprintf("%s|%s|%s\n", constants.PUT, key, value))
+	}
+
+	return db.wal.WriteLines(wls)
 }
 
 // Get retrieves the value associated with the given key.

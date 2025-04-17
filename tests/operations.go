@@ -8,6 +8,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -41,7 +42,8 @@ func LoadUser(db *quelldb.DB, id string) (*User, error) {
 
 func main() {
 	store, err := quelldb.Open("data", &quelldb.Options{
-		CompactLimit: 5,
+		CompactLimit:  5,
+		BoomHashCount: 4,
 	})
 	if err != nil {
 		panic(err)
@@ -58,7 +60,7 @@ func main() {
 	store.Put("heldsadlo", "worldsdd")
 	store.Put("heldsadlo", "world")
 
-	val, _ := store.Get("heldsadlo")
+	val, _ := store.Get("hedsadllo")
 	fmt.Println("Value of foo:", val)
 
 	u := User{
@@ -70,8 +72,57 @@ func main() {
 	SaveUser(store, u)
 	store.Flush()
 	store.Compact()
-	loadedUser, _ := LoadUser(store, "123")
-	fmt.Println("Username:", loadedUser.Username)
+	// loadedUser, _ := LoadUser(store, "1234")
+	// fmt.Println("Username:", loadedUser)
+
+	// ----
+
+	users := map[string]string{}
+
+	u1 := User{Username: "john"}
+	u2 := User{Username: "sarah"}
+	u3 := User{Username: "mike"}
+
+	b1, _ := json.Marshal(u1)
+	b2, _ := json.Marshal(u2)
+	b3, _ := json.Marshal(u3)
+
+	users["user:101"] = string(b1)
+	users["user:102"] = string(b2)
+	users["user:103"] = string(b3)
+
+	err = store.PutBatch(users)
+	if err != nil {
+		panic(err)
+	}
+
+	store.Flush()
+	store.Compact()
+
+	data, ok := store.Get("user:102")
+	if !ok || data == "" {
+		log.Fatal("Key not found or empty")
+	}
+
+	var user User
+	if err := json.Unmarshal([]byte(data), &user); err != nil {
+		panic(err)
+	}
+
+	// fmt.Println("Username2:", user.Username)
+
+	// it := store.NewIterator()
+
+	// for it.Next() {
+	// 	fmt.Println(it.Key(), it.Value())
+	// }
+
+	it := store.NewPrefixIterator("user:")
+	for it.Next() {
+		fmt.Println(it.Key(), it.Value())
+	}
+
+	// ----
 
 	// AES
 

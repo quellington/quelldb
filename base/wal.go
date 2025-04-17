@@ -8,6 +8,7 @@ package base
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type WAL struct {
@@ -24,7 +25,6 @@ func NewWAL(path string) (*WAL, error) {
 	return &WAL{file: f}, nil
 }
 
-
 // Write appends a new log entry to the WAL.
 // Each entry consists of an operation (op), a key, and a value.
 // The entry is formatted as "op|key|value\n".
@@ -34,6 +34,12 @@ func (w *WAL) Write(op, key, value string) error {
 	return err
 }
 
+// Write join a new lines to the WAL
+func (w *WAL) WriteLines(lines []string) error {
+	data := strings.Join(lines, "")
+	_, err := w.file.WriteString(data)
+	return err
+}
 
 // Read reads all log entries from the WAL.
 func (w *WAL) Close() error {
