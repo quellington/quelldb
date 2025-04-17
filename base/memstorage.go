@@ -35,7 +35,20 @@ func (m *MemStorage) Get(key string) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	val, ok := m.data[key]
-	return val, ok
+
+	if !ok {
+		return "", false
+	}
+
+	if exp, ok := m.ttl[key]; ok {
+		if time.Now().After(exp) {
+
+			// key expired
+			return "", false
+		}
+	}
+
+	return val, true
 }
 
 // Put stores the key-value pair in the storage.
@@ -45,6 +58,14 @@ func (m *MemStorage) Put(key, value string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.data[key] = value
+}
+
+// PutTTL stores the key-value pair with a time-to-live (TTL).
+func (m *MemStorage) PutWithTTL(key, value string, duration time.Duration) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.data[key] = value
+	m.ttl[key] = time.Now().Add(duration)
 }
 
 // Delete removes the key-value pair associated with the given key.

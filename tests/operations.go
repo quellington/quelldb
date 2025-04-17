@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -123,6 +124,17 @@ func main() {
 	}
 
 	// ----
+
+	// -- ttl --
+
+	store.PutTTL("test:token", "abc123", 5*time.Second)
+
+	time.Sleep(4 * time.Second)
+
+	val, ok = store.Get("test:token")
+	fmt.Println("Value of test:token:", val, ok)
+
+	// -- ttl --
 
 	// AES
 
