@@ -7,6 +7,8 @@ package base
 
 import (
 	"encoding/binary"
+	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/golang/snappy"
@@ -27,9 +29,19 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	}
 	defer file.Close()
 
+	offsets := make(map[string]int64)
+
 	filter := ApplyNewBloomFilter(constants.BOOM_BIT_SIZE, constants.BOOM_HASH_COUNT)
 
 	for k, v := range data {
+
+		// get current byte offset
+		pos, err := file.Seek(0, io.SeekCurrent)
+		if err != nil {
+			return err
+		}
+		offsets[k] = pos
+
 		filter.Add(k)
 		kb := snappy.Encode(nil, []byte(k))
 		vb := snappy.Encode(nil, []byte(v))
@@ -50,6 +62,21 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 		binary.Write(file, binary.LittleEndian, int32(len(vb)))
 		file.Write(vb)
 	}
+
+	// serialize the index map
+	indexBytes, err := json.Marshal(offsets)
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(indexBytes)
+	if err != nil {
+		return err
+	}
+
+	// write the length of index
+	binary.Write(file, binary.LittleEndian, int32(len(indexBytes)))
+
+	file.Write([]byte(constants.INDEX_FOOTER_NAME))
 
 	// Save bloom filter
 	err = saveBloomFilter(filter, path+constants.SSS_BOOM_FILTER_SUFFIX)
