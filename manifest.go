@@ -7,8 +7,13 @@ package quelldb
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/golang/snappy"
+	"github.com/thirashapw/quelldb/constants"
 	"github.com/thirashapw/quelldb/utils"
 )
 
@@ -27,7 +32,7 @@ func EncodeManifest(ssts []string, key []byte) ([]byte, error) {
 	return compressed, nil
 }
 
-
+// DecodeManifest decodes manifest data to extract SSStorage names
 func DecodeManifest(data []byte, key []byte) ([]string, error) {
 	if key != nil {
 		var err error
@@ -54,4 +59,48 @@ func DecodeManifest(data []byte, key []byte) ([]string, error) {
 		ssts = append(ssts, string(name))
 	}
 	return ssts, nil
+}
+
+// SaveManifest writes a new numbered manifest and updates CURRENT
+func SaveManifest(basePath string, ssts []string, key []byte) error {
+	// determine next manifest ID
+	nextID, err := nextManifestID(basePath)
+	if err != nil {
+		return err
+	}
+	filename := fmt.Sprintf("%s-%05d%s", constants.MANIFEST_FILE_PREFIX, nextID, constants.MANIFEST_FILE_SUFFIX)
+	fullPath := filepath.Join(basePath, filename)
+
+	// write new manifest
+	data, err := EncodeManifest(ssts, key)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(fullPath, data, 0644); err != nil {
+		return err
+	}
+
+	// update CURRENT pointer
+	currentPath := filepath.Join(basePath, constants.CURRENT_MANIFEST_FILE)
+	return os.WriteFile(currentPath, []byte(filename), 0644)
+}
+
+// internal: gets next manifest ID
+func nextManifestID(basePath string) (int, error) {
+	files, err := os.ReadDir(basePath)
+	if err != nil {
+		return 1, err
+	}
+	max := 0
+	for _, f := range files {
+		name := f.Name()
+		if len(name) >= 16 && name[:8] == constants.MANIFEST_FILE_PREFIX {
+			numStr := name[9:14]
+			num, err := strconv.Atoi(numStr)
+			if err == nil && num > max {
+				max = num
+			}
+		}
+	}
+	return max + 1, nil
 }
