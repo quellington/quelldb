@@ -9,7 +9,10 @@ const (
 	SSS_MERGE_FILE_NAME       = "sss-merged"
 	SSS_PREFIX                = "sss-"
 	SSS_SUFFIX                = ".qldb"
+	SSS_BOOM_FILTER_SUFFIX		   = ".filter"
 	SSS_COMPACT_DEFAULT_LIMIT = 10
+	BOOM_BIT_SIZE		  = 8000
+	BOOM_HASH_COUNT	  = 4
 
 	// KEY
 	PUT    = "PUT"

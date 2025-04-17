@@ -10,9 +10,9 @@ import (
 	"os"
 
 	"github.com/golang/snappy"
+	"github.com/thirashapw/quelldb/constants"
 	"github.com/thirashapw/quelldb/utils"
 )
-
 
 // WriteSSStorage writes a map of strings to a file in a sorted string storage format.
 // Each key-value pair is compressed using snappy and optionally encrypted.
@@ -27,7 +27,10 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	}
 	defer file.Close()
 
+	filter := ApplyNewBloomFilter(constants.BOOM_BIT_SIZE, constants.BOOM_HASH_COUNT)
+
 	for k, v := range data {
+		filter.Add(k)
 		kb := snappy.Encode(nil, []byte(k))
 		vb := snappy.Encode(nil, []byte(v))
 
@@ -47,10 +50,15 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 		binary.Write(file, binary.LittleEndian, int32(len(vb)))
 		file.Write(vb)
 	}
+
+	// Save bloom filter
+	err = saveBloomFilter(filter, path+constants.SSS_BOOM_FILTER_SUFFIX)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
-
-
 
 // ReadSSStorage reads a sorted string storage file and returns a map of strings.
 // Each key-value pair is read from the file, and the values are decompressed using snappy.
