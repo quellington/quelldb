@@ -105,10 +105,13 @@ func (db *DB) Get(key string) (string, bool) {
 		f := files[i]
 		if strings.HasPrefix(f.Name(), constants.SSS_PREFIX) {
 			path := filepath.Join(db.basePath, f.Name())
+
+
 			data, _ := base.ReadSSStorage(path, db.key)
 			if val, ok := data[key]; ok {
 				return val, true
 			}
+
 		}
 	}
 	return "", false
