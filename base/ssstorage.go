@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"github.com/golang/snappy"
 	"github.com/thirashapw/quelldb/constants"
@@ -23,10 +24,19 @@ import (
 // The file is created if it doesn't exist, and overwritten if it does.
 // The path parameter specifies the file location, and the key parameter is used for encryption.
 // If the key is nil, the data will be stored unencrypted.
-func WriteSSStorage(path string, data map[string]string, key []byte) error {
+func WriteSSStorage(path string, data map[string]string, key []byte) (string, string, error) {
+
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	minKey := keys[0]
+	maxKey := keys[len(keys)-1]
+
 	file, err := os.Create(path)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 	defer file.Close()
 
@@ -39,7 +49,7 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 		// get current byte offset
 		pos, err := file.Seek(0, io.SeekCurrent)
 		if err != nil {
-			return err
+			return "", "", err
 		}
 		offsets[k] = pos
 
@@ -50,11 +60,11 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 		if key != nil {
 			kb, err = utils.Encrypt(kb, key)
 			if err != nil {
-				return err
+				return "", "", err
 			}
 			vb, err = utils.Encrypt(vb, key)
 			if err != nil {
-				return err
+				return "", "", err
 			}
 		}
 
@@ -67,11 +77,11 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	// serialize the index map
 	indexBytes, err := json.Marshal(offsets)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 	_, err = file.Write(indexBytes)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	// write the length of index
@@ -82,10 +92,10 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 	// Save bloom filter
 	err = saveBloomFilter(filter, path+constants.SSS_BOOM_FILTER_SUFFIX)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
-	return nil
+	return minKey, maxKey, nil
 }
 
 // ReadSSStorage reads a sorted string storage file and returns a map of strings.
