@@ -97,6 +97,7 @@ func main() {
 	}
 
 	store.Flush()
+	store.Compact()
 
 	data, ok := store.Get("user:102")
 	if !ok || data == "" {
