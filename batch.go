@@ -18,14 +18,18 @@ import (
 type Options struct {
 	EncryptionKey []byte
 	CompactLimit  uint
+	BoomBitSize   uint
+	BoomHashCount uint
 }
 
 type DB struct {
-	memStorage   *base.MemStorage
-	wal          *base.WAL
-	basePath     string
-	key          []byte
-	compactLimit uint
+	memStorage    *base.MemStorage
+	wal           *base.WAL
+	basePath      string
+	key           []byte
+	compactLimit  uint
+	boomBitSize   uint
+	boomHashCount uint
 }
 
 // Open initializes a new database at the specified path.
@@ -45,10 +49,14 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	db := &DB{
-		memStorage: base.NewMemStorage(),
-		basePath:   path,
-		wal:        wal,
+		memStorage:     base.NewMemStorage(),
+		basePath:       path,
+		wal:            wal,
+		compactLimit:   constants.SSS_COMPACT_DEFAULT_LIMIT,
+		boomBitSize:    constants.BOOM_BIT_SIZE,
+		boomHashCount:  constants.BOOM_HASH_COUNT,
 	}
+
 
 	if opts != nil {
 		if len(opts.EncryptionKey) > 0 {
@@ -61,10 +69,14 @@ func Open(path string, opts *Options) (*DB, error) {
 		if opts.CompactLimit > 0 {
 			db.compactLimit = opts.CompactLimit
 		}
-	}
 
-	if db.compactLimit == 0 {
-		db.compactLimit = constants.SSS_COMPACT_DEFAULT_LIMIT
+		if opts.BoomBitSize > 0 {
+			db.boomBitSize = opts.BoomBitSize
+		}
+
+		if opts.BoomHashCount > 0 {
+			db.boomHashCount = opts.BoomHashCount
+		}
 	}
 
 	// Check if the WAL file exists
