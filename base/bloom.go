@@ -84,6 +84,13 @@ func saveBloomFilter(filter *BloomFilter, path string) error {
 // Returns:
 // A pointer to the BloomFilter object.
 // An error if the file could not be saved.
+//
+// Definition:
+// Metric | Recommended Values
+// Number of items (n) | ~1000 (if you expect 1K keys/SST)
+// False positive rate (fpr) | 1% (0.01)
+// m (bit size) | ≈ - (n * ln(fpr)) / (ln(2)^2)
+// k (hash functions) | ≈ (m / n) * ln(2)
 func LoadBloomFilter(path string, size uint32, hashCount uint8) (*BloomFilter, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
