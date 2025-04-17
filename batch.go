@@ -30,7 +30,7 @@ type DB struct {
 	compactLimit  uint
 	boomBitSize   uint
 	boomHashCount uint
-	manifestSSSs  []string
+	manifestSSSs  []SSSMeta
 }
 
 // Open initializes a new database at the specified path.
@@ -192,11 +192,17 @@ func (db *DB) Flush() error {
 	filename := fmt.Sprintf("%s%05d%s", constants.SSS_PREFIX, id, constants.SSS_SUFFIX)
 	path := filepath.Join(db.basePath, filename)
 
-	if err := base.WriteSSStorage(path, db.memStorage.All(), db.key); err != nil {
+	minKey, maxKey, err := base.WriteSSStorage(path, db.memStorage.All(), db.key)
+
+	if err != nil {
 		return err
 	}
 
-	db.manifestSSSs = append(db.manifestSSSs, filename)
+	db.manifestSSSs = append(db.manifestSSSs, SSSMeta{
+		Filename: filename,
+		MinKey:   minKey,
+		MaxKey:   maxKey,
+	})
 
 	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
 }

@@ -18,13 +18,35 @@ import (
 	"github.com/thirashapw/quelldb/utils"
 )
 
+type SSSMeta struct {
+	Filename string
+	MinKey   string
+	MaxKey   string
+}
+
+// write string as [len][bytes]
+func writeString(buf *bytes.Buffer, s string) {
+	binary.Write(buf, binary.LittleEndian, int32(len(s)))
+	buf.Write([]byte(s))
+}
+
+// read string as [len][bytes]
+func readString(buf *bytes.Reader) string {
+	var n int32
+	binary.Read(buf, binary.LittleEndian, &n)
+	b := make([]byte, n)
+	buf.Read(b)
+	return string(b)
+}
+
 // EncodeManifest encodes SSStorage names with binary format, nappy, ptional encryption
-func EncodeManifest(ssts []string, key []byte) ([]byte, error) {
+func EncodeManifest(ssts []SSSMeta, key []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, int32(len(ssts)))
-	for _, name := range ssts {
-		binary.Write(buf, binary.LittleEndian, int32(len(name)))
-		buf.Write([]byte(name))
+	for _, s := range ssts {
+		writeString(buf, s.Filename)
+		writeString(buf, s.MinKey)
+		writeString(buf, s.MaxKey)
 	}
 	compressed := snappy.Encode(nil, buf.Bytes())
 	if key != nil {
@@ -34,7 +56,7 @@ func EncodeManifest(ssts []string, key []byte) ([]byte, error) {
 }
 
 // DecodeManifest decodes manifest data to extract SSStorage names
-func DecodeManifest(data []byte, key []byte) ([]string, error) {
+func DecodeManifest(data []byte, key []byte) ([]SSSMeta, error) {
 	if key != nil {
 		var err error
 		data, err = utils.Decrypt(data, key)
@@ -51,19 +73,20 @@ func DecodeManifest(data []byte, key []byte) ([]string, error) {
 	var count int32
 	binary.Read(buf, binary.LittleEndian, &count)
 
-	ssts := make([]string, 0, count)
+	ssts := make([]SSSMeta, 0, count)
 	for i := 0; i < int(count); i++ {
-		var nameLen int32
-		binary.Read(buf, binary.LittleEndian, &nameLen)
-		name := make([]byte, nameLen)
-		buf.Read(name)
-		ssts = append(ssts, string(name))
+		meta := SSSMeta{
+			Filename: readString(buf),
+			MinKey:   readString(buf),
+			MaxKey:   readString(buf),
+		}
+		ssts = append(ssts, meta)
 	}
 	return ssts, nil
 }
 
 // SaveManifest writes a new numbered manifest and updates CURRENT
-func SaveManifest(basePath string, ssts []string, key []byte) error {
+func SaveManifest(basePath string, ssts []SSSMeta, key []byte) error {
 	// determine next manifest ID
 	nextID, err := nextManifestID(basePath)
 	if err != nil {
@@ -100,14 +123,14 @@ func SaveManifest(basePath string, ssts []string, key []byte) error {
 }
 
 // LoadManifest reads CURRENT, then loads the correct numbered manifest
-func LoadManifest(basePath string, key []byte) ([]string, error) {
+func LoadManifest(basePath string, key []byte) ([]SSSMeta, error) {
 	currentPath := filepath.Join(basePath, constants.CURRENT_MANIFEST_FILE)
 	data, err := os.ReadFile(currentPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 
 			// CURRENT file not found, return empty manifest (fresh storage)
-			return []string{}, nil
+			return []SSSMeta{}, nil
 		}
 		return nil, err
 	}
@@ -129,8 +152,8 @@ func nextManifestID(basePath string) (int, error) {
 	max := 0
 	for _, f := range files {
 		name := f.Name()
-		if len(name) >= 16 && name[:8] == constants.MANIFEST_FILE_PREFIX {
-			numStr := name[9:14]
+		if len(name) >= 16 && strings.HasPrefix(name, constants.MANIFEST_FILE_PREFIX) {
+			numStr := name[len(constants.MANIFEST_FILE_PREFIX)+1 : len(constants.MANIFEST_FILE_PREFIX)+6]
 			num, err := strconv.Atoi(numStr)
 			if err == nil && num > max {
 				max = num
@@ -138,4 +161,27 @@ func nextManifestID(basePath string) (int, error) {
 		}
 	}
 	return max + 1, nil
+}
+
+func overlapsAny(a SSSMeta, group []SSSMeta) bool {
+	for _, b := range group {
+		if !(a.MaxKey < b.MinKey || a.MinKey > b.MaxKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func removeCompactedSSSs(all []SSSMeta, toRemove []SSSMeta) []SSSMeta {
+	removeMap := make(map[string]bool)
+	for _, s := range toRemove {
+		removeMap[s.Filename] = true
+	}
+	var result []SSSMeta
+	for _, s := range all {
+		if !removeMap[s.Filename] {
+			result = append(result, s)
+		}
+	}
+	return result
 }
