@@ -85,6 +85,27 @@ func SaveManifest(basePath string, ssts []string, key []byte) error {
 	return os.WriteFile(currentPath, []byte(filename), 0644)
 }
 
+// LoadManifest reads CURRENT, then loads the correct numbered manifest
+func LoadManifest(basePath string, key []byte) ([]string, error) {
+	currentPath := filepath.Join(basePath, constants.CURRENT_MANIFEST_FILE)
+	data, err := os.ReadFile(currentPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+
+			// CURRENT file not found, return empty manifest (fresh storage)
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	manifestName := string(bytes.TrimSpace(data))
+	manifestPath := filepath.Join(basePath, manifestName)
+	manifestData, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return nil, err
+	}
+	return DecodeManifest(manifestData, key)
+}
+
 // internal: gets next manifest ID
 func nextManifestID(basePath string) (int, error) {
 	files, err := os.ReadDir(basePath)
