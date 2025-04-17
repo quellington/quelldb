@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/thirashapw/quelldb/base"
 	"github.com/thirashapw/quelldb/constants"
@@ -20,52 +19,62 @@ import (
 // and writes the merged data into a new SSStorage file.
 // The old SSStorage files are deleted after the merge.
 func (db *DB) Compact() error {
-	files, err := os.ReadDir(db.basePath)
-	if err != nil {
-		return err
+
+	if len(db.manifestSSSs) < int(db.compactLimit) {
+		return nil
 	}
 
-	merged := make(map[string]string)
-	var sstPaths []string
-
-	for _, f := range files {
-		if strings.HasPrefix(f.Name(), constants.SSS_PREFIX) && strings.HasSuffix(f.Name(), constants.SSS_SUFFIX) {
-			path := filepath.Join(db.basePath, f.Name())
-			data, err := base.ReadSSStorage(path, db.key)
-			if err != nil {
-				return err
-			}
-			for k, v := range data {
-				merged[k] = v
-			}
-			sstPaths = append(sstPaths, path)
+	var toCompact []SSSMeta
+	basep := db.manifestSSSs[0]
+	toCompact = append(toCompact, basep)
+	// select overlapping SSTs for compaction
+	for _, sst := range db.manifestSSSs[1:] {
+		if overlapsAny(sst, toCompact) {
+			toCompact = append(toCompact, sst)
 		}
 	}
 
-	// if there are less than 2 SSStorages, no need to merge
-	if uint(len(sstPaths)) < db.compactLimit {
+	// if not enough overlapping SSTs to trigger compaction
+	if uint(len(toCompact)) < db.compactLimit {
 		return nil
 	}
+
+	merged := make(map[string]string)
+
+	for _, f := range toCompact {
+		fullPath := filepath.Join(db.basePath, f.Filename)
+		data, err := base.ReadSSStorage(fullPath, db.key)
+		if err != nil {
+			return err
+		}
+		for k, v := range data {
+			merged[k] = v
+		}
+		os.Remove(fullPath)
+		os.Remove(fullPath + constants.SSS_BOOM_FILTER_SUFFIX)
+	}
+
+	// if there are less than 2 SSStorages, no need to merge
+	// if uint(len(sstPaths)) < db.compactLimit {
+	// 	return nil
+	// }
 
 	// write merged SSStorage
 	id, _ := utils.NextSSSID(db.basePath)
 	newSSSFile := fmt.Sprintf(constants.SSS_PREFIX+"%05d"+constants.SSS_SUFFIX, id)
 	newPath := filepath.Join(db.basePath, newSSSFile)
-	if err := base.WriteSSStorage(newPath, merged, db.key); err != nil {
+	minKey, maxKey, err := base.WriteSSStorage(newPath, merged, db.key)
+	if err != nil {
 		return err
 	}
 
-	db.manifestSSSs = []string{newSSSFile}
+	// update manifest
+	db.manifestSSSs = removeCompactedSSSs(db.manifestSSSs, toCompact)
+	db.manifestSSSs = append(db.manifestSSSs, SSSMeta{
+		Filename: newSSSFile,
+		MinKey:   minKey,
+		MaxKey:   maxKey,
+	})
 
-	if mErr := SaveManifest(db.basePath, db.manifestSSSs, db.key); mErr != nil {
-		return mErr
-	}
-
-	// remove old SSStorage
-	for _, p := range sstPaths {
-		os.Remove(p)
-		os.Remove(p + constants.SSS_BOOM_FILTER_SUFFIX)
-	}
-
-	return nil
+	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
 }

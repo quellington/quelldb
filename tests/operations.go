@@ -8,7 +8,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -42,7 +41,7 @@ func LoadUser(db *quelldb.DB, id string) (*User, error) {
 
 func main() {
 	store, err := quelldb.Open("data", &quelldb.Options{
-		CompactLimit:  20,
+		CompactLimit:  10,
 		BoomHashCount: 4,
 	})
 	if err != nil {
@@ -63,53 +62,53 @@ func main() {
 	val, _ := store.Get("hedsadllo")
 	fmt.Println("Value of foo:", val)
 
-	u := User{
-		ID:       "123",
-		Username: "thirasha",
-		Email:    "t@crypto.io",
-		Age:      50,
-	}
-	SaveUser(store, u)
-	store.Flush()
-	store.Compact()
-	loadedUser, _ := LoadUser(store, "123")
-	fmt.Println("Username:", loadedUser)
+	// u := User{
+	// 	ID:       "123",
+	// 	Username: "thirasha",
+	// 	Email:    "t@crypto.io",
+	// 	Age:      50,
+	// }
+	// SaveUser(store, u)
+	// store.Flush()
+	// store.Compact()
+	// loadedUser, _ := LoadUser(store, "123")
+	// fmt.Println("Username:", loadedUser)
 
-	// ----
+	// // ----
 
-	users := map[string]string{}
+	// users := map[string]string{}
 
-	u1 := User{Username: "john"}
-	u2 := User{Username: "sarah"}
-	u3 := User{Username: "mike"}
+	// u1 := User{Username: "john"}
+	// u2 := User{Username: "sarah"}
+	// u3 := User{Username: "mike"}
 
-	b1, _ := json.Marshal(u1)
-	b2, _ := json.Marshal(u2)
-	b3, _ := json.Marshal(u3)
+	// b1, _ := json.Marshal(u1)
+	// b2, _ := json.Marshal(u2)
+	// b3, _ := json.Marshal(u3)
 
-	users["user:101"] = string(b1)
-	users["user:102"] = string(b2)
-	users["user:103"] = string(b3)
+	// users["user:101"] = string(b1)
+	// users["user:102"] = string(b2)
+	// users["user:103"] = string(b3)
 
-	err = store.PutBatch(users)
-	if err != nil {
-		panic(err)
-	}
+	// err = store.PutBatch(users)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	store.Flush()
-	store.Compact()
+	// store.Flush()
+	// store.Compact()
 
-	data, gErr := store.Get("user:102")
-	if gErr != nil || data == "" {
-		log.Fatal(gErr.Error())
-	}
+	// data, gErr := store.Get("user:102")
+	// if gErr != nil || data == "" {
+	// 	log.Fatal(gErr.Error())
+	// }
 
-	var user User
-	if err := json.Unmarshal([]byte(data), &user); err != nil {
-		panic(err)
-	}
+	// var user User
+	// if err := json.Unmarshal([]byte(data), &user); err != nil {
+	// 	panic(err)
+	// }
 
-	fmt.Println("Username2:", user.Username)
+	// fmt.Println("Username2:", user.Username)
 
 	// it := store.Iterator()
 

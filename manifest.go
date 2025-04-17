@@ -172,7 +172,7 @@ func overlapsAny(a SSSMeta, group []SSSMeta) bool {
 	return false
 }
 
-func removeSSSs(all []SSSMeta, toRemove []SSSMeta) []SSSMeta {
+func removeCompactedSSSs(all []SSSMeta, toRemove []SSSMeta) []SSSMeta {
 	removeMap := make(map[string]bool)
 	for _, s := range toRemove {
 		removeMap[s.Filename] = true
