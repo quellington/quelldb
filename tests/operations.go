@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -29,9 +28,9 @@ func SaveUser(db *quelldb.DB, user User) error {
 	return db.Put("user:"+user.ID, string(userBytes))
 }
 func LoadUser(db *quelldb.DB, id string) (*User, error) {
-	data, ok := db.Get("user:" + id)
-	if !ok {
-		return nil, fmt.Errorf("user not found")
+	data, gErr := db.Get("user:" + id)
+	if gErr != nil {
+		return nil, gErr
 	}
 	var user User
 	err := json.Unmarshal([]byte(data), &user)
@@ -64,15 +63,15 @@ func main() {
 	val, _ := store.Get("hedsadllo")
 	fmt.Println("Value of foo:", val)
 
-	u := User{
-		ID:       "123",
-		Username: "thirasha",
-		Email:    "t@crypto.io",
-		Age:      50,
-	}
-	SaveUser(store, u)
-	store.Flush()
-	store.Compact()
+	// u := User{
+	// 	ID:       "123",
+	// 	Username: "thirasha",
+	// 	Email:    "t@crypto.io",
+	// 	Age:      50,
+	// }
+	// SaveUser(store, u)
+	// store.Flush()
+	// store.Compact()
 	// loadedUser, _ := LoadUser(store, "1234")
 	// fmt.Println("Username:", loadedUser)
 
@@ -100,9 +99,9 @@ func main() {
 	store.Flush()
 	store.Compact()
 
-	data, ok := store.Get("user:102")
-	if !ok || data == "" {
-		log.Fatal("Key not found or empty")
+	data, gErr := store.Get("user:102")
+	if gErr != nil || data == "" {
+		log.Fatal(gErr.Error())
 	}
 
 	var user User
@@ -110,7 +109,7 @@ func main() {
 		panic(err)
 	}
 
-	// fmt.Println("Username2:", user.Username)
+	fmt.Println("Username2:", user.Username)
 
 	// it := store.Iterator()
 
@@ -127,12 +126,12 @@ func main() {
 
 	// -- ttl --
 
-	store.PutTTL("test:token", "abc123", 5*time.Second)
+	// store.PutTTL("test:token", "abc123", 1*time.Second)
 
-	time.Sleep(4 * time.Second)
+	// time.Sleep(4 * time.Second)
 
-	val, ok = store.Get("test:token")
-	fmt.Println("Value of test:token:", val, ok)
+	// val, ok = store.Get("test:token")
+	// fmt.Println("Value of test:token:", val, ok)
 
 	// -- ttl --
 

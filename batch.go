@@ -96,7 +96,6 @@ func (db *DB) Put(key, value string) error {
 	return db.wal.Write(constants.PUT, key, value)
 }
 
-
 // PutBatch stores multiple key-value pairs in the database.
 // It first stores the pairs in memory and then writes them to the WAL.
 // If the key already exists, it will be updated with the new value.
@@ -117,16 +116,16 @@ func (db *DB) PutBatch(kvs map[string]string) error {
 
 // Get retrieves the value associated with the given key.
 // It first checks the in-memory storage and then searches through the SSS files in reverse order.
-// The function returns the value and a boolean indicating whether the key was found.
+// The function returns the value and error whether the key was found.
 // If the key is not found in memory or in any SSS files, it returns an empty string and false.
 // If the key is found, the value is returned in plaintext.
 // If encryption is enabled, the value will be decrypted before returning.
 // The function also handles the case where the key is not found in any SSS files.
 // If the key is found in memory, it will be returned immediately without checking the SSS files.
-func (db *DB) Get(key string) (string, bool) {
+func (db *DB) Get(key string) (string, error) {
 	// check MemS first
 	if val, ok := db.memStorage.Get(key); ok {
-		return val, true
+		return val, nil
 	}
 
 	// check from newest SSS to oldest
@@ -146,12 +145,11 @@ func (db *DB) Get(key string) (string, bool) {
 
 			data, _ := base.ReadSSStorage(path, db.key)
 			if val, ok := data[key]; ok {
-				return val, true
+				return val, nil
 			}
-
 		}
 	}
-	return "", false
+	return "", fmt.Errorf("key not found")
 
 }
 

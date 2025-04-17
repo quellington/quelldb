@@ -8,6 +8,7 @@ package base
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 
@@ -91,6 +92,8 @@ func WriteSSStorage(path string, data map[string]string, key []byte) error {
 // Each key-value pair is read from the file, and the values are decompressed using snappy.
 // If the key parameter is provided, the data will be decrypted using the key.
 // If the key is nil, the data will be read unencrypted.
+// Function also handles the case where the file is too small to contain a valid index.
+// Direct file seek instead of using a buffered reader to avoid memory overhead.
 func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -98,13 +101,61 @@ func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 	}
 	defer file.Close()
 
+	// load index footer
+	stat, _ := file.Stat()
+	if stat.Size() < 8 {
+		return nil, fmt.Errorf("file too small to contain index")
+	}
+
+	// Seek to index footer
+	_, err = file.Seek(-8, io.SeekEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	var indexLen int32
+	err = binary.Read(file, binary.LittleEndian, &indexLen)
+	if err != nil {
+		return nil, err
+	}
+
+	footer := make([]byte, 4)
+	_, err = file.Read(footer)
+	if err != nil || string(footer) != constants.INDEX_FOOTER_NAME {
+		return nil, fmt.Errorf("invalid SSStorage format: missing footer")
+	}
+
+	// seek to index and read it
+	_, err = file.Seek(-(int64(indexLen) + 8), io.SeekEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	indexBytes := make([]byte, indexLen)
+	_, err = file.Read(indexBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	offsetMap := map[string]int64{}
+	if err := json.Unmarshal(indexBytes, &offsetMap); err != nil {
+		return nil, err
+	}
+
+	// load all keys based on offsets
 	result := make(map[string]string)
-	for {
-		var kLen int32
-		err := binary.Read(file, binary.LittleEndian, &kLen)
+	for _, offset := range offsetMap {
+		_, err := file.Seek(offset, io.SeekStart)
 		if err != nil {
-			break
+			return nil, err
 		}
+
+		var kLen int32
+		err = binary.Read(file, binary.LittleEndian, &kLen)
+		if err != nil {
+			return nil, err
+		}
+
 		kb := make([]byte, kLen)
 		_, err = file.Read(kb)
 		if err != nil {
@@ -116,13 +167,16 @@ func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 				return nil, err
 			}
 		}
-		keyDecoded, err := snappy.Decode(nil, kb)
+		decodedKey, err := snappy.Decode(nil, kb)
 		if err != nil {
 			return nil, err
 		}
 
 		var vLen int32
-		binary.Read(file, binary.LittleEndian, &vLen)
+		err = binary.Read(file, binary.LittleEndian, &vLen)
+		if err != nil {
+			return nil, err
+		}
 		vb := make([]byte, vLen)
 		_, err = file.Read(vb)
 		if err != nil {
@@ -138,7 +192,9 @@ func ReadSSStorage(path string, key []byte) (map[string]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		result[string(keyDecoded)] = string(valDecoded)
+
+		result[string(decodedKey)] = string(valDecoded)
 	}
+
 	return result, nil
 }
