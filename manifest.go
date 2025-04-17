@@ -162,3 +162,26 @@ func nextManifestID(basePath string) (int, error) {
 	}
 	return max + 1, nil
 }
+
+func overlapsAny(a SSSMeta, group []SSSMeta) bool {
+	for _, b := range group {
+		if !(a.MaxKey < b.MinKey || a.MinKey > b.MaxKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func removeSSSs(all []SSSMeta, toRemove []SSSMeta) []SSSMeta {
+	removeMap := make(map[string]bool)
+	for _, s := range toRemove {
+		removeMap[s.Filename] = true
+	}
+	var result []SSSMeta
+	for _, s := range all {
+		if !removeMap[s.Filename] {
+			result = append(result, s)
+		}
+	}
+	return result
+}
