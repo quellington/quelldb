@@ -49,14 +49,13 @@ func Open(path string, opts *Options) (*DB, error) {
 	}
 
 	db := &DB{
-		memStorage:     base.NewMemStorage(),
-		basePath:       path,
-		wal:            wal,
-		compactLimit:   constants.SSS_COMPACT_DEFAULT_LIMIT,
-		boomBitSize:    constants.BOOM_BIT_SIZE,
-		boomHashCount:  constants.BOOM_HASH_COUNT,
+		memStorage:    base.NewMemStorage(),
+		basePath:      path,
+		wal:           wal,
+		compactLimit:  constants.SSS_COMPACT_DEFAULT_LIMIT,
+		boomBitSize:   constants.BOOM_BIT_SIZE,
+		boomHashCount: constants.BOOM_HASH_COUNT,
 	}
-
 
 	if opts != nil {
 		if len(opts.EncryptionKey) > 0 {
@@ -95,6 +94,25 @@ func Open(path string, opts *Options) (*DB, error) {
 func (db *DB) Put(key, value string) error {
 	db.memStorage.Put(key, value)
 	return db.wal.Write(constants.PUT, key, value)
+}
+
+
+// PutBatch stores multiple key-value pairs in the database.
+// It first stores the pairs in memory and then writes them to the WAL.
+// If the key already exists, it will be updated with the new value.
+func (db *DB) PutBatch(kvs map[string]string) error {
+	if len(kvs) == 0 {
+		return nil
+	}
+
+	var wls []string
+
+	for key, value := range kvs {
+		db.memStorage.Put(key, value)
+		wls = append(wls, fmt.Sprintf("%s|%s|%s\n", constants.PUT, key, value))
+	}
+
+	return db.wal.WriteLines(wls)
 }
 
 // Get retrieves the value associated with the given key.
