@@ -1,6 +1,9 @@
 package quelldb
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 type Iterator struct {
 	keys   []string
@@ -30,6 +33,32 @@ func (db *DB) NewIterator() *Iterator {
 		index:  -1,
 	}
 }
+
+
+// NewPrefixIterator creates a new iterator for the database with a specific prefix.
+// It retrieves all keys from the in-memory storage that start with the given prefix,
+// sorts them, and initializes the iterator with the sorted keys and their corresponding values.
+func (db *DB) NewPrefixIterator(prefix string) *Iterator {
+	all := db.memStorage.All()
+	filtered := make(map[string]string)
+	for k, v := range all {
+		if strings.HasPrefix(k, prefix) {
+			filtered[k] = v
+		}
+	}
+	keys := make([]string, 0, len(filtered))
+	for k := range filtered {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	return &Iterator{
+		keys:   keys,
+		values: filtered,
+		index:  -1,
+	}
+}
+
 
 // Next advances the iterator to the next key-value pair.
 func (it *Iterator) Next() bool {

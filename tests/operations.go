@@ -50,30 +50,30 @@ func main() {
 	}
 	defer store.Close()
 
-	// store.Put("foo", "bar")
-	// store.Put("hello", "world")
-	// store.Put("hedsadllo", "world")
-	// store.Put("heldsadsalo", "world")
-	// store.Put("hedsadllo", "world")
-	// store.Put("heldsdsalo", "world")
-	// store.Put("heldsadlo", "wodsdrld")
-	// store.Put("heldsadlo", "worldsdd")
-	// store.Put("heldsadlo", "world")
+	store.Put("foo", "bar")
+	store.Put("hello", "world")
+	store.Put("hedsadllo", "world")
+	store.Put("heldsadsalo", "world")
+	store.Put("hedsadllo", "world")
+	store.Put("heldsdsalo", "world")
+	store.Put("heldsadlo", "wodsdrld")
+	store.Put("heldsadlo", "worldsdd")
+	store.Put("heldsadlo", "world")
 
-	// val, _ := store.Get("hedsadllo")
-	// fmt.Println("Value of foo:", val)
+	val, _ := store.Get("hedsadllo")
+	fmt.Println("Value of foo:", val)
 
-	// u := User{
-	// 	ID:       "123",
-	// 	Username: "thirasha",
-	// 	Email:    "t@crypto.io",
-	// 	Age:      50,
-	// }
-	// SaveUser(store, u)
-	// store.Flush()
-	// store.Compact()
-	loadedUser, _ := LoadUser(store, "1234")
-	fmt.Println("Username:", loadedUser)
+	u := User{
+		ID:       "123",
+		Username: "thirasha",
+		Email:    "t@crypto.io",
+		Age:      50,
+	}
+	SaveUser(store, u)
+	store.Flush()
+	store.Compact()
+	// loadedUser, _ := LoadUser(store, "1234")
+	// fmt.Println("Username:", loadedUser)
 
 	// ----
 
@@ -109,7 +109,18 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Username2:", user.Username)
+	// fmt.Println("Username2:", user.Username)
+
+	// it := store.NewIterator()
+
+	// for it.Next() {
+	// 	fmt.Println(it.Key(), it.Value())
+	// }
+
+	it := store.NewPrefixIterator("user:")
+	for it.Next() {
+		fmt.Println(it.Key(), it.Value())
+	}
 
 	// ----
 
