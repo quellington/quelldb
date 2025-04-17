@@ -57,6 +57,7 @@ func (db *DB) Compact() error {
 	// remove old SSStorage
 	for _, p := range sstPaths {
 		os.Remove(p)
+		os.Remove(p + constants.SSS_BOOM_FILTER_SUFFIX)
 	}
 
 	return nil
