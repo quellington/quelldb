@@ -106,6 +106,13 @@ func (db *DB) Get(key string) (string, bool) {
 		if strings.HasPrefix(f.Name(), constants.SSS_PREFIX) {
 			path := filepath.Join(db.basePath, f.Name())
 
+			// check bloom filter
+			// if the bloom filter is not found, skip this file
+			filter, err := base.LoadBloomFilter(path+constants.SSS_BOOM_FILTER_SUFFIX, constants.BOOM_BIT_SIZE, constants.BOOM_HASH_COUNT)
+			if err == nil && !filter.Test(key) {
+				// key not in bloom filter, skip this file
+				continue
+			}
 
 			data, _ := base.ReadSSStorage(path, db.key)
 			if val, ok := data[key]; ok {
