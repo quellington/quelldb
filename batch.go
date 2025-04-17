@@ -30,6 +30,7 @@ type DB struct {
 	compactLimit  uint
 	boomBitSize   uint
 	boomHashCount uint
+	manifestSSSs  []string
 }
 
 // Open initializes a new database at the specified path.
@@ -56,6 +57,13 @@ func Open(path string, opts *Options) (*DB, error) {
 		boomBitSize:   constants.BOOM_BIT_SIZE,
 		boomHashCount: constants.BOOM_HASH_COUNT,
 	}
+
+	// Load the manifest SSS files
+	mnfts, err := LoadManifest(path, opts.EncryptionKey)
+	if err != nil {
+		return nil, err
+	}
+	db.manifestSSSs = mnfts
 
 	if opts != nil {
 		if len(opts.EncryptionKey) > 0 {
@@ -183,7 +191,14 @@ func (db *DB) Flush() error {
 
 	filename := fmt.Sprintf("%s%05d%s", constants.SSS_PREFIX, id, constants.SSS_SUFFIX)
 	path := filepath.Join(db.basePath, filename)
-	return base.WriteSSStorage(path, db.memStorage.All(), db.key)
+
+	if err := base.WriteSSStorage(path, db.memStorage.All(), db.key); err != nil {
+		return err
+	}
+
+	db.manifestSSSs = append(db.manifestSSSs, filename)
+
+	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
 }
 
 // Close closes the database and the WAL.

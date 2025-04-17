@@ -63,17 +63,17 @@ func main() {
 	val, _ := store.Get("hedsadllo")
 	fmt.Println("Value of foo:", val)
 
-	// u := User{
-	// 	ID:       "123",
-	// 	Username: "thirasha",
-	// 	Email:    "t@crypto.io",
-	// 	Age:      50,
-	// }
-	// SaveUser(store, u)
-	// store.Flush()
-	// store.Compact()
-	// loadedUser, _ := LoadUser(store, "1234")
-	// fmt.Println("Username:", loadedUser)
+	u := User{
+		ID:       "123",
+		Username: "thirasha",
+		Email:    "t@crypto.io",
+		Age:      50,
+	}
+	SaveUser(store, u)
+	store.Flush()
+	store.Compact()
+	loadedUser, _ := LoadUser(store, "123")
+	fmt.Println("Username:", loadedUser)
 
 	// ----
 
