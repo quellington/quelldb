@@ -7,6 +7,7 @@ Built on a Log-Structured Merge Tree (LSM Tree) architecture, QuellDB provides:
 - Durable disk-based persistence
 - Optional AES-256 encryption
 - Binary-safe, compressed SSStorages using Snappy
+- Range-aware compaction with manifest tracking
 - Simple, pluggable Go API
 
 ---
@@ -18,15 +19,14 @@ Built on a Log-Structured Merge Tree (LSM Tree) architecture, QuellDB provides:
 - Optional AES-256 encryption with GCM mode
 - Snappy compression by default (even without encryption)
 - Write-Ahead Log (WAL) for durability before flush
-- Zero external database dependency
-- Modular architecture for extension
+- Bloom filter support for efficient lookups
+- TTL (Time-To-Live) support for expiring keys
+- Batch writes via `PutBatch()`
+- Key iteration via `NewIterator()`, with prefix filters
+- Versioned manifest system
+- Range-aware SSStorage compaction based on overlapping key ranges
 
 ---
-
-## Limitations
-
-- Indexing and secondary indexes are not supported. All data access is key-based.
-- The library is designed for embedded use only. There is no built-in client-server model or remote access.
 
 ## Installation
 
@@ -92,6 +92,33 @@ func main() {
 
 ```
 
+TTL Support
+
+```bash
+store.PutTTL("temp:session", "expires-soon", 10*time.Second)
+```
+
+
+Batch Writes
+
+```bash
+store.PutBatch(map[string]string{
+    "user:1": "alice",
+    "user:2": "bob",
+})
+```
+
+Prefix Iteration
+
+```bash
+it := store.PrefixIterator("user:")
+for it.Next() {
+    fmt.Println(it.Key(), it.Value())
+}
+
+```
+
+
 ### Encryption Logic
 If you provide a 32-byte EncryptionKey, QuellDB will:
 
@@ -104,10 +131,16 @@ If you provide a 32-byte EncryptionKey, QuellDB will:
 
 | Function       | Description                                      |
 |----------------|--------------------------------------------------|
-| `quelldb.Open()`    | Initializes a database at given path             |
+| `Open()`    | Initializes a database at given path             |
 | `Put(key, val)`| Writes data into memory and WAL                  |
 | `Get(key)`     | Retrieves value from memory or SSStorages        |
+| `Delete(key)`     | Deletes a key from memory and appends `DEL` to WAL        |
 | `Flush()`      | Persists current MemStorage to a new SSStorage   |
+| `PutBatch(map[string]string)`      | PeWrites multiple key-value pairs in one WAL flush   |
+| `PutTTL(key, val, ttl)`      | Writes a key with an expiration duration   |
+| `Iterator()`      | Iterates all sorted keys from memory   |
+| `PrefixIterator(p)`      | Iterates sorted keys with the given prefix   |
+| `Compact(p)`      | Compacts overlapping SSStorage into a single one   |
 
 MIT License © 2025 The QuellDB Authors
 
