@@ -143,7 +143,3 @@ If you provide a 32-byte EncryptionKey, QuellDB will:
 | `Compact(p)`      | Compacts overlapping SSStorage into a single one   |
 
 MIT License © 2025 The QuellDB Authors
-
-
-## Contributors
-- [@thirashapw](https://github.com/thirashapw) – Creator and Maintainer
