@@ -22,7 +22,7 @@ Built on a Log-Structured Merge Tree (LSM Tree) architecture, QuellDB provides:
 - Bloom filter support for efficient lookups
 - TTL (Time-To-Live) support for expiring keys
 - Batch writes via `PutBatch()`
-- Key iteration via `NewIterator()`, with prefix filters
+- Key iteration via `Iterator()`, with prefix filters
 - Versioned manifest system
 - Range-aware SSStorage compaction based on overlapping key ranges
 
