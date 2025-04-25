@@ -1,13 +1,9 @@
-// Copyright 2025 The QuellDB Authors. All rights reserved.
-// Use of this source code is governed by an MIT-style license that can be found in
-// the LICENSE file.
-
 // TEST
-package main
+package tests
 
 import (
 	"encoding/json"
-	"fmt"
+	"testing"
 
 	"github.com/thirashapw/quelldb"
 )
@@ -39,7 +35,7 @@ func LoadUser(db *quelldb.DB, id string) (*User, error) {
 	return &user, nil
 }
 
-func main() {
+func TestMain(t *testing.T) {
 	store, err := quelldb.Open("data", &quelldb.Options{
 		CompactLimit:  10,
 		BoomHashCount: 4,
@@ -60,7 +56,7 @@ func main() {
 	store.Put("heldsadlo", "world")
 
 	val, _ := store.Get("hedsadllo")
-	fmt.Println("Value of foo:", val)
+	t.Logf("Value of foo: %s", val)
 
 	// u := User{
 	// 	ID:       "123",
@@ -118,7 +114,7 @@ func main() {
 
 	it := store.PrefixIterator("user:")
 	for it.Next() {
-		fmt.Println(it.Key(), it.Value())
+		t.Logf(it.Key(), it.Value())
 	}
 
 	// ----
