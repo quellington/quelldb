@@ -43,6 +43,8 @@ type DB struct {
 func Open(path string, opts *Options) (*DB, error) {
 	os.MkdirAll(path, 0755)
 
+	var encryptionKey []byte
+
 	walLogPath := filepath.Join(path, constants.LOG_FILE)
 	wal, err := base.NewWAL(walLogPath)
 	if err != nil {
@@ -58,18 +60,12 @@ func Open(path string, opts *Options) (*DB, error) {
 		boomHashCount: constants.BOOM_HASH_COUNT,
 	}
 
-	// Load the manifest SSS files
-	mnfts, err := LoadManifest(path, opts.EncryptionKey)
-	if err != nil {
-		return nil, err
-	}
-	db.manifestSSSs = mnfts
-
 	if opts != nil {
 		if len(opts.EncryptionKey) > 0 {
 			if len(opts.EncryptionKey) != 32 {
 				return nil, fmt.Errorf("encryption key must be 32 bytes (AES-256)")
 			}
+			encryptionKey = opts.EncryptionKey
 			db.key = opts.EncryptionKey
 		}
 
@@ -85,6 +81,13 @@ func Open(path string, opts *Options) (*DB, error) {
 			db.boomHashCount = opts.BoomHashCount
 		}
 	}
+
+	// Load the manifest SSS files
+	mnfts, err := LoadManifest(path, encryptionKey)
+	if err != nil {
+		return nil, err
+	}
+	db.manifestSSSs = mnfts
 
 	// Check if the WAL file exists
 	if err := db.replayWAL(walLogPath); err != nil {
