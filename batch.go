@@ -16,12 +16,6 @@ import (
 	"github.com/thirashapw/quelldb/constants"
 )
 
-type ChangeEvent struct {
-	Type  string
-	Key   string
-	Value string
-}
-
 type Options struct {
 	EncryptionKey []byte
 	CompactLimit  uint
@@ -38,8 +32,9 @@ type DB struct {
 	boomBitSize   uint
 	boomHashCount uint
 	manifestSSSs  []SSSMeta
-	subscribers   []func(ChangeEvent)
+	subscribers   map[int]func(ChangeEvent)
 	subLock       sync.RWMutex
+	nextSubID     int
 }
 
 // Open initializes a new database at the specified path.
@@ -232,16 +227,6 @@ func (db *DB) Flush() error {
 	})
 
 	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
-}
-
-// Subscribe allows you to register a callback function that will be called
-// whenever a change event occurs in the database.
-// The callback function receives a ChangeEvent struct containing the type of change,
-// the key, and the value.
-func (db *DB) Subscribe(handler func(ChangeEvent)) {
-	db.subLock.Lock()
-	defer db.subLock.Unlock()
-	db.subscribers = append(db.subscribers, handler)
 }
 
 // Close closes the database and the WAL.
