@@ -141,5 +141,7 @@ If you provide a 32-byte EncryptionKey, QuellDB will:
 | `Iterator()`      | Iterates all sorted keys from memory   |
 | `PrefixIterator(p)`      | Iterates sorted keys with the given prefix   |
 | `Compact(p)`      | Compacts overlapping SSStorage into a single one   |
+| `Subscribe(func(ChangeEvent)) int`      | Registers a live event handler and returns a handler ID   |
+| `Unsubscribe(id int)`      | Removes a previously registered live event handler by ID   |
 
 MIT License © 2025 The QuellDB Authors
