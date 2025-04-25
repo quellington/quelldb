@@ -18,5 +18,13 @@ import (
 // The function returns an error if any occurs during the write operation.
 func (db *DB) PutTTL(key, value string, ttl time.Duration) error {
 	db.memStorage.PutWithTTL(key, value, ttl)
+
+	// publish to subscribers
+	db.publish(ChangeEvent{
+		Type:  constants.PUT,
+		Key:   key,
+		Value: value,
+	})
+
 	return db.wal.Write(constants.PUT, key, value)
 }
