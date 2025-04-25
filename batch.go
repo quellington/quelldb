@@ -10,10 +10,17 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/thirashapw/quelldb/base"
 	"github.com/thirashapw/quelldb/constants"
 )
+
+type ChangeEvent struct {
+	Type  string
+	Key   string
+	Value string
+}
 
 type Options struct {
 	EncryptionKey []byte
@@ -31,6 +38,8 @@ type DB struct {
 	boomBitSize   uint
 	boomHashCount uint
 	manifestSSSs  []SSSMeta
+	subscribers   []func(ChangeEvent)
+	subLock       sync.RWMutex
 }
 
 // Open initializes a new database at the specified path.
