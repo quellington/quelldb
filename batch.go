@@ -113,6 +113,14 @@ func Open(path string, opts *Options) (*DB, error) {
 // The value is stored in plaintext, and if encryption is enabled, it will be encrypted before writing to the WAL.
 func (db *DB) Put(key, value string) error {
 	db.memStorage.Put(key, value)
+
+	// Publish to subscribers
+	db.publish(ChangeEvent{
+		Type:  constants.PUT,
+		Key:   key,
+		Value: value,
+	})
+
 	return db.wal.Write(constants.PUT, key, value)
 }
 
@@ -181,6 +189,13 @@ func (db *DB) Get(key string) (string, error) {
 // If the key is found in memory, it will be deleted immediately.
 func (db *DB) Delete(key string) error {
 	db.memStorage.Delete(key)
+
+	// Publish to subscribers
+	db.publish(ChangeEvent{
+		Type: constants.DELETE,
+		Key:  key,
+	})
+
 	return db.wal.Write(constants.DELETE, key, "")
 }
 
@@ -219,7 +234,6 @@ func (db *DB) Flush() error {
 	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
 }
 
-
 // Subscribe allows you to register a callback function that will be called
 // whenever a change event occurs in the database.
 // The callback function receives a ChangeEvent struct containing the type of change,
@@ -229,7 +243,6 @@ func (db *DB) Subscribe(handler func(ChangeEvent)) {
 	defer db.subLock.Unlock()
 	db.subscribers = append(db.subscribers, handler)
 }
-
 
 // Close closes the database and the WAL.
 // It ensures that all data is flushed to the SSS files and the WAL is closed properly.
