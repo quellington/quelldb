@@ -219,6 +219,18 @@ func (db *DB) Flush() error {
 	return SaveManifest(db.basePath, db.manifestSSSs, db.key)
 }
 
+
+// Subscribe allows you to register a callback function that will be called
+// whenever a change event occurs in the database.
+// The callback function receives a ChangeEvent struct containing the type of change,
+// the key, and the value.
+func (db *DB) Subscribe(handler func(ChangeEvent)) {
+	db.subLock.Lock()
+	defer db.subLock.Unlock()
+	db.subscribers = append(db.subscribers, handler)
+}
+
+
 // Close closes the database and the WAL.
 // It ensures that all data is flushed to the SSS files and the WAL is closed properly.
 // The function returns an error if any occurs during the close operation.
