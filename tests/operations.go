@@ -1,5 +1,5 @@
 // TEST
-package main
+package tests
 
 import (
 	"encoding/json"
