@@ -14,8 +14,8 @@ import (
 	"sort"
 
 	"github.com/golang/snappy"
-	"github.com/thirashapw/quelldb/constants"
-	"github.com/thirashapw/quelldb/utils"
+	"github.com/quellington/quelldb/constants"
+	"github.com/quellington/quelldb/utils"
 )
 
 // WriteSSStorage writes a map of strings to a file in a sorted string storage format.

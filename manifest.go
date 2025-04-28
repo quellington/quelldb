@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/golang/snappy"
-	"github.com/thirashapw/quelldb/constants"
-	"github.com/thirashapw/quelldb/utils"
+	"github.com/quellington/quelldb/constants"
+	"github.com/quellington/quelldb/utils"
 )
 
 type SSSMeta struct {

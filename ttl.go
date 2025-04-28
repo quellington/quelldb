@@ -7,7 +7,7 @@ package quelldb
 import (
 	"time"
 
-	"github.com/thirashapw/quelldb/constants"
+	"github.com/quellington/quelldb/constants"
 )
 
 // PutWithTTL stores a key-value pair in the database with a specified time-to-live (TTL).

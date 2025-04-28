@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/thirashapw/quelldb"
+	"github.com/quellington/quelldb"
 )
 
 type User struct {

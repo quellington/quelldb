@@ -1,4 +1,4 @@
-module github.com/thirashapw/quelldb
+module github.com/quellington/quelldb
 
 go 1.24.1
 

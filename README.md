@@ -31,7 +31,7 @@ Built on a Log-Structured Merge Tree (LSM Tree) architecture, QuellDB provides:
 ## Installation
 
 ```bash
-go get github.com/thirashapw/quelldb
+go get github.com/quellington/quelldb
 ```
 
 ---
@@ -44,7 +44,7 @@ package main
 
 import (
     "fmt"
-    "github.com/thirashapw/quelldb"
+    "github.com/quellington/quelldb"
 )
 
 func main() {
@@ -70,7 +70,7 @@ package main
 
 import (
     "fmt"
-    "github.com/thirashapw/quelldb"
+    "github.com/quellington/quelldb"
 )
 
 func main() {
