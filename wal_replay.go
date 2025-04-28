@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/thirashapw/quelldb/constants"
+	"github.com/quellington/quelldb/constants"
 )
 
 // Put stores a key-value pair in the database.

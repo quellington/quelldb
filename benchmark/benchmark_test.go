@@ -1,3 +1,7 @@
+// Copyright 2025 The QuellDB Authors. All rights reserved.
+// Use of this source code is governed by an MIT-style license that can be found in
+// the LICENSE file.
+
 package benchmark
 
 import (
@@ -6,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/thirashapw/quelldb"
+	"github.com/quellington/quelldb"
 )
 
 func setupDB(tb interface{ Fatalf(string, ...any) }) *quelldb.DB {

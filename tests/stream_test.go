@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/thirashapw/quelldb"
+	"github.com/quellington/quelldb"
 )
 
 func TestStream(t *testing.T) {

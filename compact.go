@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/thirashapw/quelldb/base"
-	"github.com/thirashapw/quelldb/constants"
-	"github.com/thirashapw/quelldb/utils"
+	"github.com/quellington/quelldb/base"
+	"github.com/quellington/quelldb/constants"
+	"github.com/quellington/quelldb/utils"
 )
 
 // Compact merges multiple SSStorage into a single one.

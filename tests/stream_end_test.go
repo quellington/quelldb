@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/thirashapw/quelldb"
+	"github.com/quellington/quelldb"
 )
 
 func TestStreamEnd(t *testing.T) {

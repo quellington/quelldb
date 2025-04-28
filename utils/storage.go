@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/thirashapw/quelldb/constants"
+	"github.com/quellington/quelldb/constants"
 )
 
 // nextSSSID generates the next SSStorage ID based on existing files in the base path.
